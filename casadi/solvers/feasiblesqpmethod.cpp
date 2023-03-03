@@ -1420,7 +1420,9 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
     g.add_dependency(get_function("nlp_jac_g"));
     g.add_dependency(get_function("nlp_g"));
     g.add_dependency(get_function("nlp_f"));
-    if (exact_hessian_) g.add_dependency(get_function("nlp_hess_l"));
+    if (use_sqp_){
+      if (exact_hessian_) g.add_dependency(get_function("nlp_hess_l"));
+    }
     // if (calc_f_ || calc_g_ || calc_lam_x_ || calc_lam_p_)
     //   g.add_dependency(get_function("nlp_grad"));
     g.add_dependency(qpsol_);
@@ -1627,6 +1629,8 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
         //     // Update the Hessian approximation
         //     casadi_bfgs(Hsp_, d->Bk, d->dx, d->gLag, d->gLag_old, m->w);
         //   }
+
+        g << "if (" << use_sqp_ << ") {\n";
         g.comment("Just exact Hessian implemented, GN would be possible!");
         g << "m_arg[0] = d_nlp.z;\n";
         g << "m_arg[1] = m_p;\n";
@@ -1636,6 +1640,7 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
         std::string nlp_hess_l = g(get_function("nlp_hess_l"), "m_arg", "m_res", "m_iw", "m_w");
         // g << "if (" + nlp_hess_l + ") return 1;\n";
         g << "if (" + nlp_hess_l + ") return 70;\n";
+        g << "}\n";
 
         // }
         // test if initialization is feasible
@@ -1731,7 +1736,7 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
         nlp_hess_l = g(get_function("nlp_hess_l"), "m_arg", "m_res", "m_iw", "m_w");
         // g << "if (" + nlp_hess_l + ") return 1;\n";
         g << "if (" + nlp_hess_l + ") return 70;\n";
-      g << "}\n";
+        g << "}\n";
 
       // }
       g << "}\n";
@@ -1854,7 +1859,10 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
       g << "if (" << use_sqp_ << ") {\n";
       g.comment("Solve the QP");
       codegen_qp_solve(g, "d.Bk", "d.gf", "d.lbdz", "d.ubdz", "d.Jk", "d.dx", "d.dlam", 0);
-      g << "}\n;";
+      g << "} else {\n";
+      g.comment("Solve the LP");
+      codegen_lp_solve(g, "d.gf", "d.lbdz", "d.ubdz", "d.Jk", "d.dx", "d.dlam", 0);
+      g << "}\n";
 
       // // Eval quadratic model and check for convergence
       // m_k = eval_m_k(mem);
@@ -1880,7 +1888,8 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
 
       g.comment("Detecting indefiniteness");
       g << "if (" << use_sqp_ << ") {\n";
-      g << "double gain = " << g.bilin("d.Bk", Hsp_, "d.dx", "d.dx") << ";\n";
+      g.local("gain", "casadi_real");
+      g << "gain = " << g.bilin("d.Bk", Hsp_, "d.dx", "d.dx") << ";\n";
       g << "if (gain < 0) {\n";
       g << "if (" << print_status_ << ") {\n";
       g << "printf(\"WARNING(feasiblesqpmethod): Indefinite Hessian detected\\n\");\n";
@@ -2137,7 +2146,6 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
   cg.local("curr_infeas", "casadi_real");
   cg << "curr_infeas = prev_infeas;\n";
 
-
   // Calculate asymptotic exactness of current step
   // casadi_copy(d->dx, nx_, d->z_tmp);
   // casadi_axpy(nx_, -1., d->z_feas, d->z_tmp);
@@ -2208,7 +2216,7 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
     //   casadi_mv(d->Bk, Hsp_, d->z_tmp, d->gf_feas, true);
     // }
     cg << "if (" << use_sqp_ << ") {\n";
-    cg.comment("Just SQP implemented so far!");
+    // cg.comment("Just SQP implemented so far!");
     cg << cg.mv("d.Bk", Hsp_, "d.z_tmp", "d.gf_feas", true) << "\n";
     cg << "}\n";
 
@@ -2276,7 +2284,11 @@ void Feasiblesqpmethod::codegen_declarations(CodeGenerator& g) const {
     cg.comment("Just SQP implemented. Solve the feasible QP");
     codegen_qp_solve(cg, "d.Bk", "d.gf_feas", "d.lbdz_feas", "d.ubdz_feas",
                          "d.Jk", "d.dx_feas", "d.dlam_feas", 0);
-    cg << "}\n";
+    cg << "} else {\n";
+    cg.comment("Just SQP implemented. Solve the feasible QP");
+    codegen_lp_solve(cg, "d.gf_feas", "d.lbdz_feas", "d.ubdz_feas",
+                         "d.Jk", "d.dx_feas", "d.dlam_feas", 0);
+    cg << "} \n";
 
 
     // step_inf_norm = casadi_masked_norm_inf(nx_, d->dx_feas, d->tr_mask);
