@@ -278,3 +278,4 @@ if(INSTALL_INTERNAL_HEADERS)
 endif()
 
 target_compile_definitions(casadi PUBLIC CASADI_SNPRINTF=snprintf)
+target_compile_features(casadi PUBLIC cxx_std_17)
