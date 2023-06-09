@@ -48,6 +48,7 @@ Level Logger::level = INFO;
 #include <cstdio>
 #include <cstdlib>
 #include <algorithm>
+#include <filesystem>
 
 #include <type_traits>
 
@@ -637,7 +638,10 @@ inline const char* return_status_string(Result result) {
     // CasadiModel casadi_model = &m->model;
 
     // ::Options uno_options = rewrite_options(opts_);
-    ::Options uno_options = get_default_options("/home/david/casadi_fork/casadi/casadi/interfaces/uno/uno.options");
+    std::filesystem::path current_file(__FILE__);
+
+    std::cout << "Options path: "<< current_file.parent_path() / "uno.options" << std::endl;
+    ::Options uno_options = get_default_options(current_file.parent_path() / "uno.options");
     // define preset and insert options given through casadi 
     insert_casadi_options(uno_options, opts_);
     uno_options.print();
