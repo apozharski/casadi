@@ -3861,6 +3861,34 @@ namespace casadi{
   %}
 }
 
+%extend Matrix<SXElem> {
+
+  %matlabcode %{
+      function s = saveobj(obj)
+        try
+            s.serialization = obj.serialize();
+        catch exception
+            warning(['Serializing of CasADi SX failed:' getReport(exception) ]);
+            s = struct;
+        end
+     end
+  %}
+  %matlabcode_static %{
+     function obj = loadobj(s)
+        try
+          if isstruct(s)
+             obj = casadi.SX.deserialize(s.serialization);
+          else
+             obj = s;
+          end
+        catch exception
+            warning(['Serializing of CasADi SX failed:' getReport(exception) ]);
+            s = struct;
+        end
+     end
+  %}
+}
+
 %extend Sparsity {
   %matlabcode %{
      function s = saveobj(obj)
