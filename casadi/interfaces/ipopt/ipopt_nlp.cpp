@@ -269,6 +269,16 @@ namespace casadi {
     const Vector& y_c = *ip_data->curr()->y_c();
     const Vector& y_d = *ip_data->curr()->y_d();
 
+    const DenseVector* slack_x_U_ = (DenseVector*) GetRawPtr(ip_cq->curr_slack_x_U());
+    const DenseVector* slack_x_L_ = (DenseVector*) GetRawPtr(ip_cq->curr_slack_x_L());
+    const DenseVector* slack_s_U_ = (DenseVector*) GetRawPtr(ip_cq->curr_slack_s_U());
+    const DenseVector* slack_s_L_ = (DenseVector*) GetRawPtr(ip_cq->curr_slack_s_L());
+
+    std::vector<double> slack_x_U(slack_x_U_->ExpandedValues(), slack_x_U_->ExpandedValues()+slack_x_U_->Dim());
+    std::vector<double> slack_x_L(slack_x_L_->ExpandedValues(), slack_x_L_->ExpandedValues()+slack_x_L_->Dim());
+    std::vector<double> slack_s_U(slack_s_U_->ExpandedValues(), slack_s_U_->ExpandedValues()+slack_s_U_->Dim());
+    std::vector<double> slack_s_L(slack_s_L_->ExpandedValues(), slack_s_L_->ExpandedValues()+slack_s_L_->Dim());
+
     std::fill_n(x_, n_, 0);
     std::fill_n(g_, m_, 0);
     std::fill_n(z_L_, n_, 0);
@@ -314,7 +324,10 @@ namespace casadi {
     full_callback = true;
 #endif // WITH_IPOPT_CALLBACK
 
-    return solver_.intermediate_callback(mem_, x_, z_L_, z_U_, g_, lambda_, obj_value, iter,
+    return solver_.intermediate_callback(mem_, x_, z_L_, z_U_, g_, lambda_,
+                                         slack_x_U, slack_x_L,
+                                         slack_s_U, slack_s_L,
+                                         obj_value, iter,
                                          inf_pr, inf_du, mu, d_norm, regularization_size,
                                          alpha_du, alpha_pr, ls_trials, full_callback);
   }
