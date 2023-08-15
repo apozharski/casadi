@@ -80,6 +80,7 @@ namespace casadi {
     // Stats
     std::vector<double> inf_pr, inf_du, mu, d_norm, regularization_size,
       obj, alpha_pr, alpha_du;
+    std::vector<std::vector<double>> slack_x_U, slack_x_L, slack_s_U, slack_s_L;
     std::vector<int> ls_trials;
     const char* return_status;
     int iter_count;
@@ -171,9 +172,11 @@ namespace casadi {
                       int& nnz_jac_g, int& nnz_h_lag) const;
     int get_number_of_nonlinear_variables() const;
     bool get_list_of_nonlinear_variables(int num_nonlin_vars, int* pos_nonlin_vars) const;
-    bool intermediate_callback(IpoptMemory* m, const double* x, const double* z_L,
-                               const double* z_U, const double* g,
-                               const double* lambda, double obj_value, int iter,
+    bool intermediate_callback(IpoptMemory* m, const double* x, const double* z_L, const double* z_U,
+                               const double* g, const double* lambda,
+                               const std::vector<double> slack_x_U, const std::vector<double> slack_x_L,
+                               const std::vector<double> slack_s_U, const std::vector<double> slack_s_L,
+                               double obj_value, int iter,
                                double inf_pr, double inf_du, double mu, double d_norm,
                                double regularization_size, double alpha_du, double alpha_pr,
                                int ls_trials, bool full_callback) const;
