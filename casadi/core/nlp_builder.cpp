@@ -35,7 +35,12 @@ namespace casadi {
   }
 
   void NlpBuilder::disp(std::ostream& stream, bool more) const {
-    stream << "#x=" << this->x.size() << ", #g=" << this->g.size();
+    stream << "#x=" << this->x.size() << ", #g=" << this->g.size() << ", #c=" << this->G_idx.size();
+    stream << ", G_idx=";
+    for(int k : this->G_idx)
+    {
+      stream << k << ", ";
+    }
     if (more) {
       stream << std::endl;
       stream << "x = " << this->x << std::endl;
@@ -169,6 +174,21 @@ namespace casadi {
     // Read segments
     parse();
 
+    // Do complementarity handling
+    for(int k : nlp_.G_idx)
+    {
+      nlp_.G.push_back(nlp_.g.at(k));
+    }
+    // remove complementarities from g
+    // TODO probably a better way here
+    std::set<int> G_idx(nlp_.G_idx.begin(), nlp_.G_idx.end());
+    for(auto rit = G_idx.rbegin(); rit != G_idx.rend(); rit++)
+    {
+      nlp_.g.erase(nlp_.g.begin() + *rit);
+      nlp_.g_lb.erase(nlp_.g_lb.begin() + *rit);
+      nlp_.g_ub.erase(nlp_.g_ub.begin() + *rit);
+    }
+    
     // multiple the objective sign
     nlp_.f = sign_*nlp_.f;
   }
@@ -589,9 +609,12 @@ namespace casadi {
         case '5':
         {
           // Read the indices
-          read_int(); // ck
-          read_int(); // ci
-          casadi_error("Complementary constraints unsupported");
+          int ck = read_int(); // ck
+          int ci = read_int(); // ci
+          nlp_.G_idx.push_back(i);
+          nlp_.H.push_back(nlp_.x.at(ci-1));
+          if(ck != 1)
+            casadi_error("Unexpected variable bounds in complementarity");
           continue;
         }
 

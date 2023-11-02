@@ -54,6 +54,12 @@ namespace casadi {
     /// Constraints
     std::vector<MX> g;
 
+    /// Complementarity constraints
+    std::vector<MX> G,H;
+
+    /// complementarity indices
+    std::vector<int> G_idx;
+
     /// Bounds on x
     std::vector<double> x_lb, x_ub;
 
