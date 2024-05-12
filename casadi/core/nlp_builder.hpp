@@ -66,6 +66,10 @@ namespace casadi {
     /// Bounds on g
     std::vector<double> g_lb, g_ub;
 
+    /// Bounds on Complementarity vectors
+    std::vector<double> G_lb, G_ub;
+    std::vector<double> H_lb, H_ub;
+
     /// Primal initial guess
     std::vector<double> x_init;
 

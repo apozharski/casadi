@@ -178,6 +178,8 @@ namespace casadi {
     for(int k : nlp_.G_idx)
     {
       nlp_.G.push_back(nlp_.g.at(k));
+      nlp_.G_lb.push_back(nlp_.g_lb.at(k));
+      nlp_.G_ub.push_back(nlp_.g_ub.at(k));
     }
     // remove complementarities from g
     // TODO probably a better way here
@@ -613,8 +615,10 @@ namespace casadi {
           int ci = read_int(); // ci
           nlp_.G_idx.push_back(i);
           nlp_.H.push_back(nlp_.x.at(ci-1));
-          if(ck != 1)
-            casadi_error("Unexpected variable bounds in complementarity");
+          nlp_.H_lb.push_back(nlp_.x_lb.at(ci-1));
+          nlp_.H_ub.push_back(nlp_.x_ub.at(ci-1));
+          nlp_.x_lb.at(ci-1) = -inf;
+          nlp_.x_ub.at(ci-1) = inf;
           continue;
         }
 
