@@ -174,21 +174,31 @@ namespace casadi {
     // Read segments
     parse();
 
-    // Do complementarity handling
+    // Do complementarity handling by
+    // first populating G
     for(int k : nlp_.G_idx)
     {
-      nlp_.G.push_back(nlp_.g.at(k));
+      nlp_.G.push_back(nlp_.g.at(k-1));
       nlp_.G_lb.push_back(nlp_.g_lb.at(k));
       nlp_.G_ub.push_back(nlp_.g_ub.at(k));
     }
+
+    // then shifting the H variables as necessary to make lbx = 0
+    for(int i : nlp_.Hv_idx)
+    {
+      double lb = nlp_.x_lb.at(i-1);
+      nlp_.H.push_back(nlp_.x.at(i-1) - lb);
+      nlp_.x_lb.at(i-1) = -inf;
+    }
+    
     // remove complementarities from g
     // TODO probably a better way here
     std::set<int> G_idx(nlp_.G_idx.begin(), nlp_.G_idx.end());
     for(auto rit = G_idx.rbegin(); rit != G_idx.rend(); rit++)
     {
-      nlp_.g.erase(nlp_.g.begin() + *rit);
-      nlp_.g_lb.erase(nlp_.g_lb.begin() + *rit);
-      nlp_.g_ub.erase(nlp_.g_ub.begin() + *rit);
+      nlp_.g.erase(nlp_.g.begin() + *rit -1);
+      nlp_.g_lb.erase(nlp_.g_lb.begin() + *rit - 1);
+      nlp_.g_ub.erase(nlp_.g_ub.begin() + *rit - 1);
     }
     
     // multiple the objective sign
@@ -619,6 +629,7 @@ namespace casadi {
           nlp_.H_ub.push_back(nlp_.x_ub.at(ci-1));
           nlp_.x_lb.at(ci-1) = -inf;
           nlp_.x_ub.at(ci-1) = inf;
+          nlp_.g_lb.at(i) = 0; // Lower bound on complementarity.
           continue;
         }
 

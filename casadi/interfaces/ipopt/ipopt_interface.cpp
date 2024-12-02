@@ -504,10 +504,10 @@ namespace casadi {
       m->regularization_size.push_back(regularization_size);
       m->alpha_pr.push_back(alpha_pr);
       m->alpha_du.push_back(alpha_du);
-      m->slack_x_U.push_back(slack_x_U);
-      m->slack_x_L.push_back(slack_x_L);
-      m->slack_s_U.push_back(slack_s_U);
-      m->slack_s_L.push_back(slack_s_L);
+      // m->slack_x_U.push_back(slack_x_U);
+      // m->slack_x_L.push_back(slack_x_L);
+      // m->slack_s_U.push_back(slack_s_U);
+      // m->slack_s_L.push_back(slack_s_L);
       m->ls_trials.push_back(ls_trials);
       m->obj.push_back(obj_value);
       if (!fcallback_.is_null()) {
@@ -741,10 +741,10 @@ namespace casadi {
       iterations["obj"] = m->obj;
       iterations["alpha_pr"] = m->alpha_pr;
       iterations["alpha_du"] = m->alpha_du;
-      iterations["slack_x_U;"] = m->slack_x_U;
-      iterations["slack_x_L;"] = m->slack_x_L;
-      iterations["slack_s_U;"] = m->slack_s_U;
-      iterations["slack_s_L;"] = m->slack_s_L;
+      iterations["slack_x_U"] = m->slack_x_U;
+      iterations["slack_x_L"] = m->slack_x_L;
+      iterations["slack_s_U"] = m->slack_s_U;
+      iterations["slack_s_L"] = m->slack_s_L;
       stats["iterations"] = iterations;
     }
     return stats;

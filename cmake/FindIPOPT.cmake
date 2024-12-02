@@ -1,6 +1,5 @@
 find_package(Ipopt CONFIG)
 
-
 if(Ipopt_FOUND)
     set(IPOPT_LIBRARIES ${Ipopt_LIBRARIES})
     set(IPOPT_INCLUDEDIR ${Ipopt_INCLUDE_DIR})
@@ -12,6 +11,7 @@ else()
 
     include(canonicalize_paths)
     canonicalize_paths(IPOPT_LIBRARY_DIRS)
+
 
     # add osx frameworks to IPOPT_LIBRARIES
     if(IPOPT_LIBRARIES)
