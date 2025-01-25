@@ -56,6 +56,7 @@ namespace casadi {
     // Problem data structure
     casadi_highs_data<double> d;
 
+    std::vector<int> col_status, row_status;
   };
 
   /** \brief \pluginbrief{Conic,highs}
