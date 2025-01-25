@@ -220,7 +220,12 @@ namespace casadi {
 
     casadi_highs_solve(&m->d, arg, res, iw, w);
     m->fstats.at("solver").toc();
-
+    m->col_status.clear();
+    m->row_status.clear();
+    HighsInt* col_status = (HighsInt*)(m->d.col_status);
+    HighsInt* row_status = (HighsInt*)(m->d.row_status);
+    m->col_status.insert(m->col_status.end(), col_status, col_status + nx_);
+    m->row_status.insert(m->row_status.end(), row_status, row_status + na_);
     return 0;
   }
 
@@ -314,6 +319,8 @@ namespace casadi {
     stats["num_dual_infeasibilities"] = m->d.num_dual_infeasibilities;
     stats["max_dual_infeasibility"] = m->d.max_dual_infeasibility;
     stats["sum_dual_infeasibilities"] = m->d.sum_dual_infeasibilities;
+    stats["col_status"] = m->col_status;
+    stats["row_status"] = m->row_status;
     return stats;
   }
 

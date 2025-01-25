@@ -68,6 +68,9 @@ struct casadi_highs_data {
   T1 max_dual_infeasibility;
   T1 sum_dual_infeasibilities;
 
+  casadi_int* col_status;
+  casadi_int* row_status;
+  
   void* highs;
 };
 // C-REPLACE "casadi_highs_data<T1>" "struct casadi_highs_data"
@@ -88,14 +91,19 @@ void highs_free_mem(casadi_highs_data<T1>* d) {
 // SYMBOL "highs_work"
 template<typename T1>
 void casadi_highs_work(const casadi_highs_prob<T1>* p, casadi_int* sz_arg, casadi_int* sz_res, casadi_int* sz_iw, casadi_int* sz_w) {
+  const casadi_qp_prob<T1>* qp = p->qp;
   casadi_qp_work(p->qp, sz_arg, sz_res, sz_iw, sz_w);
+  *sz_iw += qp->nx; // col_status
+  *sz_iw += qp->na; // row_status
 }
 
 // SYMBOL "highs_init"
 template<typename T1>
 void casadi_highs_init(casadi_highs_data<T1>* d, const T1*** arg, T1*** res, casadi_int** iw, T1** w) {
-  
-
+  casadi_qp_init(d->qp, iw, w);
+  const casadi_qp_prob<T1>* qp = d->prob->qp;
+  d->col_status = *iw; *iw += qp->nx;
+  d->row_status = *iw; *iw += qp->na;
 }
 
 
@@ -133,6 +141,12 @@ int casadi_highs_solve(casadi_highs_data<T1>* d, const double** arg, double** re
 
   // get primal and dual solution
   Highs_getSolution(d->highs, d_qp->x, d_qp->lam_x, 0, d_qp->lam_a);
+
+  // get basis
+  // TODO(@apozharski) currently we are wasting memory becasue HighsInt->int and casadi_int->long long
+  status = Highs_getBasis(d->highs, (HighsInt*)(d->col_status), (HighsInt*)(d->row_status));
+  HighsInt* col_status = (HighsInt*)(d->col_status);
+  HighsInt* row_status = (HighsInt*)(d->row_status);
   
   if (d_qp->lam_x) {
     casadi_scal(p_qp->nx, -1., d_qp->lam_x);
