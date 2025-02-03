@@ -125,15 +125,27 @@ int casadi_highs_solve(casadi_highs_data<T1>* d, const double** arg, double** re
   const int sense = 1;
   const double offset = 0.0;
 
+  // TODO(@apozharski) do we need to pass the model again each time? This limits warm starting significantly :(
   status = Highs_passModel(d->highs, p_qp->nx, p_qp->na, p_qp->nnz_a, p_qp->nnz_h,
     matrix_format, matrix_format, sense, offset,
     d_qp->g, d_qp->lbx, d_qp->ubx, d_qp->lba, d_qp->uba,
     p->colinda, p->rowa, d_qp->a,
     p->colindh, p->rowh, d_qp->h,
     p->integrality);
-  
+
   if (!(status==kHighsStatusOk || status==kHighsStatusWarning)) return 1;
 
+  // Pass x0 if warmstart is provided?
+  if (d_qp->x0)
+  {
+    // For now best way to do this seems to be to call crossover.
+    status = Highs_crossover(d->highs, p_qp->nx, p_qp->na, d_qp->x0, d_qp->lam_x0, d_qp->lam_a0);
+    if (!(status==kHighsStatusOk || status==kHighsStatusWarning))
+    {
+      casadi_warning("Warm start via Highs_crossover failed");
+    }
+  }
+  
   // solve incumbent model
   status = Highs_run(d->highs);
 
