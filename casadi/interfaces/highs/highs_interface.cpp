@@ -287,6 +287,12 @@ namespace casadi {
 
     g << "casadi_highs_solve(d, arg, res, iw, w);\n";
 
+    g << "m->col_status.clear();\n";
+    g << "m->row_status.clear();";
+    g << "HighsInt* col_status = (HighsInt*)(m->d.col_status);";
+    g << "HighsInt* row_status = (HighsInt*)(m->d.row_status);";
+    g << "m->col_status.insert(m->col_status.end(), col_status, col_status + nx_);";
+    g << "m->row_status.insert(m->row_status.end(), row_status, row_status + na_);";
     g << "if (!d_qp.success) {\n";
     if (error_on_fail_) {
       g << "return -1000;\n";
