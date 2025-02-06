@@ -57,6 +57,10 @@ namespace casadi {
        {OT_DICT,
         "Options to be passed to HiGHS."
         }},
+      {"warmstart_highs",
+       {OT_BOOL,
+        "Whether to try and warmstart HiGHS or not."
+        }},
      }
    };
 
@@ -66,6 +70,10 @@ namespace casadi {
 
     // Read user options
     for (auto&& op : opts) {
+      if(op.first=="warmstart_highs")
+      {
+        p_.warmstart = op.second;
+      }
       if (op.first=="highs") {
         opts_ = op.second;
       }

@@ -31,6 +31,7 @@ struct casadi_highs_prob {
   const int *colinda, *rowa;
   const int *colindh, *rowh;
   const int *integrality;
+  bool warmstart = false;
 };
 // C-REPLACE "casadi_highs_prob<T1>" "struct casadi_highs_prob"
 
@@ -136,7 +137,7 @@ int casadi_highs_solve(casadi_highs_data<T1>* d, const double** arg, double** re
   if (!(status==kHighsStatusOk || status==kHighsStatusWarning)) return 1;
 
   // Pass x0 if warmstart is provided?
-  if (d_qp->x0)
+  if (p->warmstart)
   {
     // For now best way to do this seems to be to call crossover.
     status = Highs_crossover(d->highs, p_qp->nx, p_qp->na, d_qp->x0, d_qp->lam_x0, d_qp->lam_a0);
