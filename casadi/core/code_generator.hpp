@@ -82,11 +82,19 @@ namespace casadi {
     /// Add/get a shorthand
     std::string shorthand(const std::string& name, bool allow_adding=true);
 
-    // Add a sparsity pattern
-    std::string sparsity(const Sparsity& sp);
+    /* Add a sparsity pattern
+    *
+    * \param canonical If true, request canonical form,
+    * as opposed to potential dense abbreviation
+    */
+    std::string sparsity(const Sparsity& sp, bool canonical=true);
 
-    // Add a sparsity pattern, get index
-    casadi_int add_sparsity(const Sparsity& sp);
+    /* Add a sparsity pattern, get index
+    *
+    * \param canonical If true, request canonical form,
+    * as opposed to potential dense abbreviation
+    */
+    casadi_int add_sparsity(const Sparsity& sp, bool canonical=true);
 
     /** \brief Get the index of an existing sparsity pattern
 
@@ -163,14 +171,25 @@ namespace casadi {
         \identifier{s4} */
     void define_rom_integer(const void* id, casadi_int size);
 
-    /** \brief Setup a callback
-
-        \identifier{27s} */
-    void setup_callback(const std::string& s, const Function& f);
     /** \brief Access file scope integer read-only memory
 
         \identifier{s5} */
     std::string rom_integer(const void* id) const;
+
+    /** \brief Allocate file scope double writeable memory
+
+        \identifier{2aw} */
+    void define_pool_double(const std::string& name, const std::vector<double>& def);
+
+    /** \brief Access file scope double writeable memory
+
+        \identifier{2ax} */
+    std::string pool_double(const std::string& name) const;
+
+    /** \brief Setup a callback
+
+        \identifier{27s} */
+    void setup_callback(const std::string& s, const Function& f);
 
     /** \brief Generate a call to a function (generic signature)
 
@@ -242,7 +261,7 @@ namespace casadi {
     /** \brief Avoid stack?
 
         \identifier{si} */
-    bool avoid_stack() { return avoid_stack_;}
+    bool avoid_stack() const { return avoid_stack_;}
 
     /** \brief Print a constant in a lossless but compact manner
 
@@ -250,14 +269,38 @@ namespace casadi {
     std::string constant(double v);
     std::string constant(casadi_int v);
     std::string constant(const std::string& v);
+    std::string constant(char v);
 
-    /** \brief Print an intializer
+    std::string format_padded(casadi_int i) const;
+
+    std::string zeros(casadi_int sz);
+    std::string ones(casadi_int sz);
+
+    /** \brief Print an initializer
 
         \identifier{sk} */
-    std::string initializer(const std::vector<double>& v);
-    std::string initializer(const std::vector<casadi_int>& v);
-    std::string initializer(const std::vector<char>& v);
-    std::string initializer(const std::vector<std::string>& v);
+    template <typename T>
+    std::string initializer(const std::vector<T>& v) {
+        std::stringstream s;
+        if (v.size() > max_initializer_elements_per_line) {
+            s << "\n  ";
+        }
+
+        s << "{";
+        for (casadi_int i = 0; i < v.size(); ++i) {
+            if (i != 0) {
+                if (max_initializer_elements_per_line > 1 &&
+                    i % max_initializer_elements_per_line == 0) {
+                    s << ",\n  ";
+                } else {
+                    s << ", ";
+                }
+            }
+            s << constant(v[i]);
+        }
+        s << "}";
+        return s.str();
+    }
 
     /** \brief Sanitize source files for codegen
 
@@ -487,6 +530,11 @@ namespace casadi {
         \identifier{te} */
     std::string norm_inf(casadi_int n, const std::string& x);
 
+    /** \brief norm_1
+
+        \identifier{2br} */
+    std::string norm_1(casadi_int n, const std::string& x);
+
     /** 
 
      * \brief norm_2
@@ -634,7 +682,12 @@ namespace casadi {
       AUX_ORACLE_CALLBACK,
       AUX_OCP_BLOCK,
       AUX_ORACLE,
-      AUX_SCALED_COPY
+      AUX_SCALED_COPY,
+      AUX_BLAZING_DE_BOOR,
+      AUX_BLAZING_1D_BOOR_EVAL,
+      AUX_BLAZING_2D_BOOR_EVAL,
+      AUX_BLAZING_3D_BOOR_EVAL,
+      AUX_PRINTME
     };
 
     /** \brief Add a built-in auxiliary function
@@ -650,10 +703,15 @@ namespace casadi {
                            const std::vector<Sparsity>& sp_out);
 
     /** Get work vector name from index */
-    std::string work(casadi_int n, casadi_int sz) const;
+    std::string work(casadi_int n, casadi_int sz, bool is_ref) const;
 
     /** Get work vector element from index */
     std::string workel(casadi_int n) const;
+
+    /** \brief Reserve a maximum size of work elements, used for padding of index
+
+        \identifier{2ay} */
+    void reserve_work(casadi_int n);
 
     /** Declare an array */
     static std::string array(const std::string& type, const std::string& name, casadi_int len,
@@ -691,6 +749,9 @@ namespace casadi {
       bool check_lhs=true, bool check_rhs=true);
     void copy_default(const std::string& arg, std::size_t n, const std::string& res,
       const std::string& def,  bool check_rhs=true);
+
+    // Should we elide a copy?
+    bool elide_copy(casadi_int sz);
 
     /** \brief Create a fill operation
 
@@ -887,6 +948,15 @@ namespace casadi {
     // Have a flag for exporting/importing symbols
     bool with_export, with_import;
 
+    // Maximum number of declarations per line
+    casadi_int max_declarations_per_line;
+
+    // Maximum number of initializer elements per line
+    casadi_int max_initializer_elements_per_line;
+
+    // Force the external API to use canonical sparsity
+    bool force_canonical;
+
     // Prefix symbols in DLLs?
     std::string dll_export, dll_import;
 
@@ -907,6 +977,12 @@ namespace casadi {
     casadi_int indent_;
     casadi_int current_indent_;
 
+    // Number of zeros/ones
+    casadi_int sz_zeros_;
+    casadi_int sz_ones_;
+
+    casadi_int padding_length_;
+
     // Names of exposed functions
     std::vector<std::string> exposed_fname;
 
@@ -926,6 +1002,8 @@ namespace casadi {
     std::map<std::string, std::string> local_default_;
     std::map<const void *, casadi_int> file_scope_double_;
     std::map<const void *, casadi_int> file_scope_integer_;
+    std::vector< std::vector<double> > pool_double_defaults_;
+    std::map<std::string, casadi_int> pool_double_;
 
     // Added functions
     struct FunctionMeta {

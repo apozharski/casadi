@@ -26,6 +26,7 @@
 #include "mx.hpp"
 
 #include "casadi_misc.hpp"
+#include "casadi_os.hpp"
 #ifdef HAVE_MKSTEMPS
 #define CASADI_NEED_UNISTD
 #else // HAVE_MKSTEMPS
@@ -431,6 +432,5 @@ std::string simple_mkstemps(const std::string& prefix, const std::string& suffix
     }
     return acc;
   }
-
 
 } // namespace casadi

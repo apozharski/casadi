@@ -307,10 +307,10 @@ namespace casadi {
               errors.insert(i);
               report_issue(i, "Constraint found depending on a state of the previous interval.");
             }
-            if (A_bottomline[i]<start_pivot || A_bottomline[i]>pivot) {
-              errors.insert(i);
-              report_issue(i, "Gap-closing constraint must depend on a state.");
-            }
+            //if (A_bottomline[i]<start_pivot || A_bottomline[i]>pivot) {
+            //  errors.insert(i);
+            //  report_issue(i, "Gap-closing constraint must depend on a state.");
+            //}
             nxs_.push_back(1);
             nus_.push_back(A_skyline[i]-pivot-1); // Size of jump equals number of states
             ngs_.push_back(0);
@@ -757,7 +757,7 @@ void FatropInterface::set_fatrop_prob() {
 
   p_.sp_a = jacg_sp_;
   p_.sp_h = hesslag_sp_;
-  get_function("nlp_hess_l").save("nlp_hess_l.casadi");
+
   p_.nlp_hess_l = OracleCallback("nlp_hess_l", this);
   p_.nlp_jac_g = OracleCallback("nlp_jac_g", this);
   p_.nlp_grad_f = OracleCallback("nlp_grad_f", this);

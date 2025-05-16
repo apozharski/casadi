@@ -53,6 +53,14 @@ namespace casadi {
     /// Evaluate the function symbolically (SX)
     int eval_sx(const SXElem** arg, SXElem** res, casadi_int* iw, SXElem* w) const override;
 
+    /** \brief Evaluate the MX node on a const/linear/nonlinear partition
+
+        \identifier{2cm} */
+        void eval_linear(const std::vector<std::array<MX, 3> >& arg,
+            std::vector<std::array<MX, 3> >& res) const override {
+        eval_linear_rearrange(arg, res);
+    }
+
     /** \brief  Evaluate symbolically (MX)
 
         \identifier{24i} */
@@ -90,7 +98,9 @@ namespace casadi {
         \identifier{24o} */
     void generate(CodeGenerator& g,
                   const std::vector<casadi_int>& arg,
-                  const std::vector<casadi_int>& res) const override;
+                  const std::vector<casadi_int>& res,
+                  const std::vector<bool>& arg_is_ref,
+                  std::vector<bool>& res_is_ref) const override;
 
     /** \brief Get the operation
 

@@ -85,10 +85,8 @@ namespace casadi {
       X g_bounds = g(sgi);
 
       // Detect  f2(p)x+f1(p)==0
-      Function gf = Function("gf", std::vector<X>{p},
-        substitute(std::vector<X>{jtimes(g_bounds, x, X::ones(nx, 1)), g_bounds},
-          std::vector<X>{x},
-          std::vector<X>{X(0)}));
+      Function gf = Function("gf", std::vector<X>{x, p},
+        std::vector<X>{jtimes(g_bounds, x, X::ones(nx, 1)), g_bounds});
       casadi_assert_dev(!gf.has_free());
 
       std::vector<casadi_int> target_x;
@@ -607,6 +605,7 @@ namespace casadi {
     auto m = static_cast<NlpsolMemory*>(mem);
     m->add_stat("callback_fun");
     m->success = false;
+    m->d_nlp.prob = nullptr;
     m->unified_return_status = SOLVER_RET_UNKNOWN;
     return 0;
   }
@@ -660,6 +659,10 @@ namespace casadi {
   }
 
   std::map<std::string, Nlpsol::Plugin> Nlpsol::solvers_;
+
+#ifdef CASADI_WITH_THREADSAFE_SYMBOLICS
+  std::mutex Nlpsol::mutex_solvers_;
+#endif // CASADI_WITH_THREADSAFE_SYMBOLICS
 
   const std::string Nlpsol::infix_ = "nlpsol";
 
@@ -777,6 +780,8 @@ namespace casadi {
     casadi_copy(d_nlp->lam_p, np_, d_nlp->lam_p);
     casadi_copy(&d_nlp->objective, 1, d_nlp->f);
 
+    if (m->success) m->unified_return_status = SOLVER_RET_SUCCESS;
+
     if (error_on_fail_ && !m->success)
       casadi_error("nlpsol process failed. "
                    "Set 'error_on_fail' option to false to ignore this error.");
@@ -840,9 +845,14 @@ namespace casadi {
   }
 
   Function Nlpsol::kkt() const {
+#ifdef CASADI_WITH_THREADSAFE_SYMBOLICS
+    // Safe access to kkt_
+    std::lock_guard<std::mutex> lock(kkt_mtx_);
+#endif // CASADI_WITH_THREADSAFE_SYMBOLICS
     // Quick return if cached
-    if (kkt_.alive()) {
-      return shared_cast<Function>(kkt_.shared());
+    SharedObject temp;
+    if (kkt_.shared_if_alive(temp)) {
+      return shared_cast<Function>(temp);
     }
 
     // Generate KKT function
@@ -1152,8 +1162,17 @@ namespace casadi {
   Dict Nlpsol::get_stats(void* mem) const {
     Dict stats = OracleFunction::get_stats(mem);
     auto m = static_cast<NlpsolMemory*>(mem);
+    casadi_assert(m->d_nlp.prob,
+      "No stats available: nlp Solver instance has not yet been called with numerical arguments.");
+    auto d_nlp = &m->d_nlp;
     stats["success"] = m->success;
     stats["unified_return_status"] = string_from_UnifiedReturnStatus(m->unified_return_status);
+    if (d_nlp->prob && d_nlp->prob->detect_bounds.ng) {
+      std::vector<bool> is_simple;
+      assign_vector(detect_simple_bounds_is_simple_, is_simple);
+      stats["detect_simple_bounds_is_simple"] = is_simple;
+      stats["detect_simple_bounds_target_x"] = detect_simple_bounds_target_x_;
+    }
     return stats;
   }
 
@@ -1287,7 +1306,7 @@ namespace casadi {
   void Nlpsol::serialize_body(SerializingStream &s) const {
     OracleFunction::serialize_body(s);
 
-    s.version("Nlpsol", 4);
+    s.version("Nlpsol", 5);
     s.pack("Nlpsol::nx", nx_);
     s.pack("Nlpsol::ng", ng_);
     s.pack("Nlpsol::np", np_);
@@ -1324,7 +1343,7 @@ namespace casadi {
   }
 
   Nlpsol::Nlpsol(DeserializingStream & s) : OracleFunction(s) {
-    int version = s.version("Nlpsol", 1, 4);
+    int version = s.version("Nlpsol", 1, 5);
     s.unpack("Nlpsol::nx", nx_);
     s.unpack("Nlpsol::ng", ng_);
     s.unpack("Nlpsol::np", np_);
@@ -1359,6 +1378,9 @@ namespace casadi {
     if (version>=3) {
       s.unpack("Nlpsol::detect_simple_bounds_is_simple", detect_simple_bounds_is_simple_);
       s.unpack("Nlpsol::detect_simple_bounds_parts", detect_simple_bounds_parts_);
+      if (version==4) {
+        casadi_error("Saved detect_simple_bounds_parts changed signature");
+      }
       s.unpack("Nlpsol::detect_simple_bounds_target_x", detect_simple_bounds_target_x_);
     }
     for (casadi_int i=0;i<detect_simple_bounds_is_simple_.size();++i) {

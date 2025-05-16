@@ -54,6 +54,10 @@ if(WITH_HIGHS)
   add_subdirectory(highs)
 endif()
 
+if(WITH_CLARABEL)
+  add_subdirectory(clarabel)
+endif()
+
 if(WITH_DAQP)
   add_subdirectory(daqp)
 endif()
@@ -132,6 +136,14 @@ endif()
 
 if(WITH_MATLAB_IPC)
   add_subdirectory(matlab_ipc)
+endif()
+
+if(WITH_LIBZIP)
+  add_subdirectory(libzip)
+endif()
+
+if(WITH_GHC_FILESYSTEM)
+  add_subdirectory(ghc)
 endif()
 
 if(WITH_LINT)

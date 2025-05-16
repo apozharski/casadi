@@ -81,6 +81,9 @@ namespace casadi {
         \identifier{21} */
     std::vector<casadi_int> workloc_;
 
+
+    std::vector<bool> workstate_;
+
     /// Free variables
     std::vector<MX> free_vars_;
 
@@ -175,6 +178,8 @@ namespace casadi {
         \identifier{2f} */
     static ProtoFunction* deserialize(DeserializingStream& s);
 
+    static std::vector<MX> order(const std::vector<MX>& expr);
+
     /** \brief Extract the residual function G and the modified function Z out of an expression
 
      * (see Albersmeyer2010 paper)
@@ -183,13 +188,14 @@ namespace casadi {
     void generate_lifted(Function& vdef_fcn, Function& vinit_fcn) const override;
 
     /** Inline calls? */
-    bool should_inline(bool always_inline, bool never_inline) const override;
+    bool should_inline(bool with_sx, bool always_inline, bool never_inline) const override;
 
     /** \brief Evaluate symbolically, SX type
 
         \identifier{2h} */
     int eval_sx(const SXElem** arg, SXElem** res,
-                casadi_int* iw, SXElem* w, void* mem) const override;
+                casadi_int* iw, SXElem* w, void* mem,
+                bool always_inline, bool never_inline) const override;
 
     /** \brief Evaluate symbolically, MX type
 
