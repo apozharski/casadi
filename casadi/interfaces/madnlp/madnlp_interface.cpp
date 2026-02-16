@@ -256,7 +256,8 @@ int MadnlpInterface::solve(void* mem) const {
   casadi_madnlp_presolve(&m->d);
 
   int ret = casadi_madnlp_solve(&m->d);
-  if ( ret != 0 ) throw CasadiException("MADNLPError");
+  std::cout << ret << std::endl;
+  //if ( ret != 0 ) throw CasadiException("MADNLPError");
 
   m->success = m->d.success;
   m->unified_return_status = static_cast<UnifiedReturnStatus>(m->d.unified_return_status);
