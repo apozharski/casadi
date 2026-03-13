@@ -18,7 +18,7 @@ if(WITH_MADNLP)
   add_subdirectory(madnlp)
 endif()
 
-if(WITH_MADMPEC)
+if(WITH_CCOPT)
   add_subdirectory(madmpec)
 endif()
 
