@@ -19,7 +19,7 @@ if(WITH_MADNLP)
 endif()
 
 if(WITH_CCOPT)
-  add_subdirectory(madmpec)
+  add_subdirectory(ccopt)
 endif()
 
 if(WITH_BONMIN)
