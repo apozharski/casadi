@@ -179,10 +179,24 @@ handle_t open_shared_library(const std::string& lib, const std::vector<std::stri
 
         bool environ_rtld_next_overridden = false;
         char** environ_rtld_next_original_value = nullptr;
-				if (p_environ_rtld_next && dlerrors == NULL && p_environ_rtld_next != &environ) {
+				if (dlerrors == NULL && p_environ_rtld_next != &environ) {
           environ_rtld_next_original_value = *p_environ_rtld_next;
-          *p_environ_rtld_next = environ;
+          //*p_environ_rtld_next = environ;
           environ_rtld_next_overridden = true;
+          // std::cout << "overriding environ" << std::endl;
+          // std::cout << "lib = " << lib << std::endl;
+          // std::cout << "caller = " << caller << std::endl;
+          // std::cout << "environ = " << environ << std::endl;
+          // std::cout << "*p_environ_rtld_next = " << *p_environ_rtld_next << std::endl;
+          // std::cout << "environ_rtld_next_original_value = " << environ_rtld_next_original_value << std::endl;
+          // char **env = *p_environ_rtld_next;
+          // std::cout << "first pointer: " << (void*)*env << " first value: " << *env << std::endl;
+          // int ii = 0;
+          // for (env = *p_environ_rtld_next; *env != 0; env++)
+          // {
+          //   std::cout << "ptr = " << (void*)env <<" env[" << ii<< "] = " << *env << std::endl;
+          //   ii++;
+          // }
         }
         #endif
     #endif
@@ -288,10 +302,21 @@ handle_t open_shared_library(const std::string& lib, const std::vector<std::stri
 		    // If environ_rtld_next_original_value == NULL then this could be because
 		    // it is an undefined weak symbol. Do _not_ put it back and instead
 		    // leave what we put there?
-        if (environ_rtld_next_overridden && environ_rtld_next_original_value) {
+        if (environ_rtld_next_overridden) {
           *p_environ_rtld_next = environ_rtld_next_original_value;
           environ_rtld_next_overridden = false;
         }
+        //char **env = *p_environ_rtld_next;
+        // std::cout << "first pointer: " << (void*)*env << " first value: " << *env << std::endl;
+        // std::cout << "lib = " << lib << std::endl;
+        // std::cout << "*p_environ_rtld_next = " << *p_environ_rtld_next << std::endl;
+        // char **env;
+        // int ii = 0;
+        // for (env = *p_environ_rtld_next; *env != 0; env++)
+        // {
+        //   std::cout << "env[" << ii<< "] = " << *env << std::endl;
+        //   ii++;
+        // }
     #endif
     #endif
     #endif
